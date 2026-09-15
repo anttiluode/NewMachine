@@ -2,11 +2,11 @@
 
 > A small stateful AI/control laboratory built by stripping neuron-inspired ideas down until each claim can fail cleanly.
 
-NewMachine separates three things that ordinary toy units often collapse together:
+NewMachine separates three questions that ordinary toy units often collapse together:
 
 ```text
 what state should I keep?
-what part of that state is relevant to someone else?
+what part of that state matters to someone else?
 when should influence actually propagate?
 ```
 
@@ -33,17 +33,17 @@ predictive receiver
       -> coast while silent, correct on events
 ```
 
-That is a larger shift than the original "two inhibitory gates" framing: publication relevance has become a learned geometric object rather than a supplied Boolean switch.
+The project has moved well beyond the original "two inhibitory gates" framing: publication relevance is now a learned geometric object rather than a supplied Boolean switch.
 
 ## Progression
 
 | gate | question | earned result |
 | --- | --- | --- |
-| v0 | Can state-side and output-side control be genuinely different? | Yes, once the controlled variable has memory. |
+| v0 | Can state-side and output-side control genuinely differ? | Yes, once the controlled variable has memory. |
 | v1 | Is either intervention universally better? | No. Preserving valid state and repairing corrupted state favor different sites. |
-| v2 | Do those sites require two controller output channels? | Not when the required actions are mutually exclusive; one signed command reproduces the oracle switch. |
-| v3 | What if reliability and publication relevance overlap? | Independent objectives can require both interventions simultaneously. |
-| v4 | Does sparse publication help a real downstream consumer? | State repair before communication produces the large gain; separate publication control adds a smaller threshold-dependent effect. |
+| v2 | Do those sites require two controller outputs? | Not when actions are mutually exclusive; one signed command reproduces the oracle switch. |
+| v3 | What if reliability and publication relevance overlap? | Independent objectives can require both interventions at once. |
+| v4 | Does sparse publication help a real consumer? | State repair before communication gives the large gain; separate publication control adds a smaller threshold-dependent effect. |
 | **v5** | Can publication relevance be inferred instead of supplied? | **Yes in the frozen two-view vector world: cross-view structure recovers the shared subspace that sender-only PCA misses.** |
 
 Full measurements and claim boundaries live in `RESULTS_V0.md` through `RESULTS_V5.md`.
@@ -54,9 +54,9 @@ The sender and a peer each see a six-dimensional mixture of a two-dimensional sh
 
 During an unlabeled 420-step calibration prefix, NewMachine estimates sender/peer cross-covariance and uses its leading two eigenvectors as the publication subspace. A robust median/MAD innovation threshold separately supplies the reliability signal for state repair. Neither public/private nor corruption labels are used to choose those controls.
 
-Across eight frozen worlds, mean alignment with the true public subspace is:
+Across eight frozen worlds:
 
-| estimator | alignment |
+| estimator | mean alignment with true public subspace |
 | --- | ---: |
 | sender-only PCA | 0.233967 |
 | **cross-view shared estimator** | **0.894349** |
@@ -73,23 +73,34 @@ At the default sparse-event threshold `0.10`:
 
 The learned shared projection beats sender PCA in both receiver error and traffic at all seven frozen same-threshold comparisons. Adding repair beats the un-repaired shared projection at all seven as well. The learned repair system is about 7.4% above the oracle receiver RMSE at the default point.
 
-See [`RESULTS_V5.md`](RESULTS_V5.md) for the exact protocol and the important limits: shared rank is supplied, calibration is batch/global, a peer view is available, and the corruption task is intentionally easy.
+See [`RESULTS_V5.md`](RESULTS_V5.md) for the exact protocol and limits: shared rank is supplied, calibration is batch/global, a peer view is available, and the corruption task is intentionally easy.
 
-## Live Pages laboratory
+## Live Pages organism
 
-`index.html` is a dependency-free GitHub Pages laboratory. The current browser organism mirrors the deterministic v4 sender/receiver equations and runs continuously through seeded epochs. It exposes policy, seed, event threshold, pause/step/reset controls, live sender/receiver error, message rate, corruption/local-only intervals, and sampled error-versus-traffic curves.
+`index.html` is now a dependency-free streaming extension of v5 rather than a replay of the frozen v4 experiment.
 
-Python receipts remain the scientific authority. The browser simulation has deterministic regression tests and syntax checks in CI.
+The browser creates one six-dimensional world and keeps it running. Two orthonormal publication directions receive a small symmetric cross-view update every step, so the publication projector changes while sender repair, sparse communication and the predictive receiver are already operating.
 
-The next browser milestone is to move v5's shared-subspace estimator online so the page visibly **develops its publication geometry while it runs**, instead of only replaying a fixed controller.
+The page shows:
+
+- the live public/sender/receiver trajectory on an evaluator-only public coordinate;
+- shared-subspace alignment as the representation develops;
+- the actual changing 6 × 6 publication projector;
+- corruption, repair decisions and sparse correction events;
+- receiver error, sender error, message rate and detector F1;
+- learned+repair, learned-without-repair and raw-delta modes without requiring a backend.
+
+The browser learner is **not** silently substituted for the frozen v5 experiment. Python remains the scientific authority; the online mechanism has its own deterministic Node regression test. On seed 11 that test requires the learner to move from a poor initial subspace to greater than `0.90` alignment after 3,500 unlabeled streaming steps.
 
 ## What not to claim
 
-NewMachine is still a controlled research toy. It is not evidence that chandelier cells are attention heads, not a new remote-estimation theorem, and not yet a general learned AI architecture. v5 uses paired views, a supplied shared rank, batch eigendecomposition and a deliberately simple corruption regime.
+NewMachine is still a controlled research toy. It is not evidence that chandelier cells are attention heads, not a new remote-estimation theorem, and not yet a general learned AI architecture. The frozen v5 result uses paired views, a supplied shared rank, batch eigendecomposition and a deliberately simple corruption regime. The Pages learner is an online developmental extension, not additional frozen scientific evidence.
 
-The interesting narrow claim is now:
+The current narrow claim is:
 
 > **Persistent state repair and selective publication can remain useful as separate operations, and publication relevance can be represented by an inferred shared subspace rather than an explicit context label.**
+
+The next falsifier is in [`ROADMAP.md`](ROADMAP.md): v6 asks whether the method can distinguish receiver-relevant shared state from a nuisance that is also shared across views.
 
 ## Run
 
@@ -97,6 +108,7 @@ The interesting narrow claim is now:
 python -m pip install -e ".[test]"
 pytest -q
 node tests/web_sim_test.mjs
+node tests/web_vector_live_test.mjs
 python -m experiments.run_v0
 python -m experiments.run_v1
 python -m experiments.run_v2
@@ -110,12 +122,14 @@ python -m experiments.run_v5
 - `src/new_machine/core.py` — original persistent scalar unit and two intervention sites
 - `src/new_machine/task.py` — deterministic v0-v3 task streams and metrics
 - `src/new_machine/receiver.py` — v4 scalar sender/predictive-receiver system
-- `src/new_machine/vector_receiver.py` — v5 two-view vector world, shared-subspace inference and repair
+- `src/new_machine/vector_receiver.py` — frozen v5 two-view vector world, shared-subspace inference and repair
 - `experiments/run_v0.py` … `run_v5.py` — frozen scientific receipts
 - `RESULTS_V0.md` … `RESULTS_V5.md` — measurements and claim boundaries
-- `index.html`, `web/` — live GitHub Pages laboratory
-- `tests/` — mechanism, receipt, browser-parity and page-structure regressions
-- [`ROADMAP.md`](ROADMAP.md) — current spine and next gate only; merged build-plan scaffolding is intentionally pruned
+- `web/sim.mjs` — preserved deterministic v4 browser mechanism
+- `web/vector_live.mjs` — streaming v5 online shared-subspace learner
+- `index.html`, `web/app.mjs`, `web/style.css` — live GitHub Pages laboratory
+- `tests/` — mechanism, receipt, browser-development and page-structure regressions
+- [`ROADMAP.md`](ROADMAP.md) — current spine and next falsifier; merged build-plan scaffolding is intentionally pruned
 
 ## Lineage
 
