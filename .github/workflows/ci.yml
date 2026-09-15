@@ -24,3 +24,5 @@ jobs:
         run: python -m experiments.run_v0 > /tmp/newmachine-v0.json
       - name: Frozen v1 receipt
         run: python -m experiments.run_v1 > /tmp/newmachine-v1.json
+      - name: Frozen v2 receipt
+        run: python -m experiments.run_v2 > /tmp/newmachine-v2.json
