@@ -59,6 +59,20 @@ def recovery_error(reference: np.ndarray, observed: np.ndarray, mute: np.ndarray
     return 0.0 if not errors else float(np.mean(errors))
 
 
+def recovery_hold_mask(mask: np.ndarray, horizon: int) -> np.ndarray:
+    """Mark the frozen post-window hold after each True run ends."""
+    mask = np.asarray(mask, dtype=bool)
+    if mask.ndim != 1:
+        raise ValueError("mask must be one-dimensional")
+    if horizon <= 0:
+        raise ValueError("horizon must be positive")
+    hold = np.zeros_like(mask)
+    ends = np.flatnonzero(mask[:-1] & ~mask[1:]) + 1
+    for start in ends:
+        hold[start:min(start + horizon, len(mask))] = True
+    return hold
+
+
 def make_complementary_stream(seed: int, steps: int = 1400):
     if steps < 300:
         raise ValueError("steps must be at least 300")
