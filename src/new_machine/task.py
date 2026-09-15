@@ -73,6 +73,21 @@ def recovery_hold_mask(mask: np.ndarray, horizon: int) -> np.ndarray:
     return hold
 
 
+def prediction_residuals(observed: np.ndarray, alpha: float) -> np.ndarray:
+    """Causal residual from a passive one-state predictor of the observed stream."""
+    observed = np.asarray(observed, dtype=float)
+    if observed.ndim != 1:
+        raise ValueError("observed must be one-dimensional")
+    if not (0.0 <= alpha < 1.0):
+        raise ValueError("alpha must be in [0, 1)")
+    residual = np.empty_like(observed)
+    state = 0.0
+    for t, value in enumerate(observed):
+        residual[t] = value - state
+        state = alpha * state + (1.0 - alpha) * value
+    return residual
+
+
 def make_complementary_stream(seed: int, steps: int = 1400):
     if steps < 300:
         raise ValueError("steps must be at least 300")
@@ -102,3 +117,34 @@ def make_complementary_stream(seed: int, steps: int = 1400):
         start += 92 + int(rng.integers(-5, 6))
 
     return clean, observed, hide, reset
+
+
+def make_factorized_stream(seed: int, steps: int = 1800):
+    """Independent publication-context and corruption schedules with overlap."""
+    if steps < 400:
+        raise ValueError("steps must be at least 400")
+    rng = np.random.default_rng(seed)
+    clean = np.empty(steps, dtype=float)
+    clean[0] = 0.55 + 0.03 * rng.normal()
+    for t in range(1, steps):
+        clean[t] = 0.985 * clean[t - 1] + 0.015 * 0.55 + 0.018 * rng.normal()
+    clean += 0.025 * rng.normal(size=steps)
+
+    observed = clean.copy()
+    private = np.zeros(steps, dtype=bool)
+    corrupt = np.zeros(steps, dtype=bool)
+
+    start = 50 + int(rng.integers(0, 10))
+    while start + 25 < steps:
+        duration = 16 + int(rng.integers(0, 7))
+        private[start:start + duration] = True
+        start += 83 + int(rng.integers(-5, 6))
+
+    start = 82 + int(rng.integers(0, 10))
+    while start + 25 < steps:
+        duration = 14 + int(rng.integers(0, 7))
+        corrupt[start:start + duration] = True
+        observed[start:start + duration] += 0.45
+        start += 97 + int(rng.integers(-5, 6))
+
+    return clean, observed, private, corrupt
