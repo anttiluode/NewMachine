@@ -78,7 +78,9 @@ That is the large v4 result. It comes from protecting resident state before deci
 
 A little, but not universally.
 
-Across the seven frozen event thresholds, `factorized` is strictly lower in receiver RMSE while using no more traffic than `signed` at **4 / 7** operating points. Its largest receiver-RMSE improvement over `signed` is about `0.000588`; at its worst threshold it is about `0.000151` worse. The largest event-fraction reduction is about `0.03573`.
+At the **same seven frozen threshold settings**, `factorized` has lower receiver RMSE while using no more traffic than `signed` at **4 / 7** paired operating points. Its largest same-threshold receiver-RMSE improvement over `signed` is about `0.000588`; at its worst threshold it is about `0.000151` worse. The largest same-threshold event-fraction reduction is about `0.03573`.
+
+Those are paired operating-point comparisons, **not a proof of Pareto dominance over the complete error/traffic frontier**. The threshold-to-traffic mapping differs slightly between policies, and v4 samples only seven thresholds.
 
 So v4 does **not** support:
 
@@ -86,7 +88,7 @@ So v4 does **not** support:
 
 It supports the narrower statement:
 
-> **Once there is a real receiver, state repair carries most of the gain in this toy world. Independently suppressing publication can extend the error/traffic frontier at some operating points, especially when local-only state and repair overlap, but the benefit is small and threshold-dependent.**
+> **Once there is a real receiver, state repair carries most of the gain in this toy world. Independently suppressing publication can improve some matched-threshold error/traffic operating points, especially when local-only state and repair overlap, but the benefit is small and threshold-dependent.**
 
 That is useful because it moves the project away from counting sender events and toward an actual downstream criterion.
 
@@ -101,7 +103,7 @@ web/app.mjs
 web/style.css
 ```
 
-The page runs indefinitely by moving through deterministic epochs. It shows public truth, sender state, receiver estimate, corruption/local-only windows, published events, live reconstruction metrics, and the receiver-error versus message-rate frontier for all four policies.
+The page runs indefinitely by moving through deterministic epochs. It shows public truth, sender state, receiver estimate, corruption/local-only windows, published events, live reconstruction metrics, and the sampled receiver-error versus message-rate curves for all four policies.
 
 The animation is an inspection instrument, not a replacement for the receipt. Python remains the scientific authority; JavaScript parity is regression-tested in CI with a fixed PRNG prefix and mechanism invariants.
 
