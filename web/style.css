@@ -12,6 +12,8 @@
   --private: rgba(175, 110, 255, 0.16);
   --corrupt: rgba(255, 84, 111, 0.17);
   --event: #e4ff7a;
+  --alignment: #86e3ff;
+  --traffic: #ffba68;
   --radius: 18px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -60,10 +62,10 @@ h1 span { color: #9fb0c4; }
 .button-row { display: flex; gap: 7px; }
 #run-toggle { background: var(--accent); color: #11160b; border-color: var(--accent); min-width: 86px; }
 
-.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+.metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 16px 0; }
 .metric { padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
 .metric span { color: var(--muted); font-size: 0.73rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.metric strong { display: block; margin: 8px 0 4px; font-size: clamp(1.65rem, 3vw, 2.5rem); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+.metric strong { display: block; margin: 8px 0 4px; font-size: clamp(1.55rem, 2.7vw, 2.4rem); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
 .metric small { color: #6f7e91; }
 
 .lab-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(290px, 1fr); gap: 16px; }
@@ -85,6 +87,8 @@ canvas { display: block; width: 100%; height: auto; border-radius: 11px; backgro
 .swatch.delta { background: #ff7e83; }
 .swatch.signed { background: #ffba68; }
 .swatch.factorized { background: #86e3ff; }
+.swatch.alignment { background: var(--alignment); }
+.swatch.traffic { background: var(--traffic); }
 .caption { margin: 13px 2px 0; color: #758599; line-height: 1.55; font-size: 0.84rem; }
 
 .state-panel { min-height: 100%; }
@@ -92,6 +96,7 @@ canvas { display: block; width: 100%; height: auto; border-radius: 11px; backgro
 .state-list div { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid #202b38; }
 .state-list dt { color: #718197; }
 .state-list dd { margin: 0; font-weight: 750; text-align: right; }
+.danger-text { color: #ff7387; }
 .pulse-box { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin: 32px 0; }
 .orb { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }
 .sender-orb { border: 1px solid #815a36; background: rgba(255,184,107,.10); color: var(--sender); }
@@ -115,13 +120,17 @@ canvas { display: block; width: 100%; height: auto; border-radius: 11px; backgro
 footer { margin-top: 30px; padding: 20px 4px; color: #657589; border-top: 1px solid #1d2631; }
 footer p { margin: 0; }
 
+@media (max-width: 1180px) {
+  .metrics { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 1050px) {
   .hero { grid-template-columns: 1fr; }
   .hero-diagram { max-width: 760px; }
   .control-bar { grid-template-columns: 1fr 0.55fr 1fr; }
   .button-row { grid-column: 1 / -1; }
   .lab-grid { grid-template-columns: 1fr; }
-  .metrics, .explain-grid { grid-template-columns: repeat(2, 1fr); }
+  .explain-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 650px) {
@@ -135,6 +144,10 @@ footer p { margin: 0; }
   .metrics, .explain-grid { grid-template-columns: 1fr 1fr; }
   .metric { padding: 14px; }
   .panel { padding: 14px; }
+}
+
+@media (max-width: 430px) {
+  .metrics, .explain-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
