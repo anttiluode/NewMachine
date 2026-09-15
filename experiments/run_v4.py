@@ -54,7 +54,10 @@ def run_v4() -> dict[str, object]:
         abs(f["sender_rmse"] - s["sender_rmse"])
         for s, f in zip(signed, factorized, strict=True)
     ]
-    pareto_better = [
+
+    # This is deliberately a same-threshold operating-point comparison, not
+    # a claim of global Pareto dominance across communication budgets.
+    pairwise_better = [
         (f["event_fraction"] <= s["event_fraction"] + 1e-12)
         and (f["receiver_rmse"] < s["receiver_rmse"] - 1e-12)
         for s, f in zip(signed, factorized, strict=True)
@@ -96,9 +99,9 @@ def run_v4() -> dict[str, object]:
         },
         "factorized_vs_signed": {
             "sender_rmse_max_abs_difference": float(max(sender_diffs)),
-            "pareto_better_points": int(sum(pareto_better)),
-            "frontier_extension_found": bool(any(pareto_better)),
-            "all_points_dominate_signed": bool(all(pareto_better)),
+            "pairwise_better_points": int(sum(pairwise_better)),
+            "pairwise_improvement_found": bool(any(pairwise_better)),
+            "all_pairwise_points_better": bool(all(pairwise_better)),
             "max_receiver_rmse_improvement": float(max(receiver_improvements)),
             "min_receiver_rmse_improvement": float(min(receiver_improvements)),
             "max_event_fraction_reduction": float(max(event_reductions)),
