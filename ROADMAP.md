@@ -5,45 +5,47 @@ The repository keeps measured evidence (`RESULTS_V*.md`), runnable receipts (`ex
 ## Current spine
 
 ```text
-v0  persistent state makes state-side and publication-side control diverge
+v0  memory makes state-side and publication-side control diverge
 v1  the useful intervention site depends on context
 v2  one signed command can route between mutually exclusive interventions
 v3  independent objectives can require both interventions at once
 v4  a predictive receiver makes silence and publication measurable downstream
+v5  paired experience infers a shared publication subspace without relevance labels
 ```
 
-The strongest v4 effect is state repair before sparse communication. Independent publication control adds only a small, threshold-dependent improvement.
+The strongest v4 effect is state repair before sparse communication. v5 then removes the supplied relevance bit: cross-view structure recovers a receiver-relevant vector subspace that sender-only PCA misses in the frozen world.
 
-## v5 — infer what is shared
+## Live organism
 
-The next gate removes the supplied `private` relevance bit and makes the state vector-valued.
+The Pages laboratory now contains a streaming extension of v5. It does not replay the batch eigendecomposition from the scientific receipt. Instead, two orthonormal publication directions receive a small symmetric cross-view update every step and are re-orthogonalized online.
 
-A sender and a peer each observe:
+The page exposes an evaluator-only alignment score and the actual 6 × 6 publication projector so the representation can be watched while it changes. State repair, sparse publication, and the predictive receiver remain active while the subspace is developing.
+
+The frozen Python v5 receipt remains the scientific authority; the browser learner is separately regression-tested as a developmental mechanism.
+
+## v6 — shared is not necessarily relevant
+
+v5 intentionally equates cross-view sharedness with receiver relevance. That is the next assumption to attack.
+
+Construct paired views containing three factors:
 
 ```text
-shared public latent + independent local latent
+receiver-relevant shared latent
++ shared nuisance latent
++ independent local latents
 ```
 
-in the same ambient vector space. Local variance is deliberately larger than shared variance, so sender-only PCA is an adversarial control rather than an automatic solution.
+Pure cross-view correlation should now fail by mixing useful shared state with shared nuisance. The receiver loss must provide the missing causal criterion.
 
-During an unlabeled calibration prefix, the machine estimates the sender/peer cross-covariance. The leading shared subspace becomes the publication projection. No private/public labels are used to learn it.
+The next gate should compare:
 
-During held-out evaluation:
+1. cross-view shared-subspace learning alone;
+2. receiver-error-driven selection inside the shared subspace;
+3. sender-only PCA and raw sparse delta controls;
+4. an oracle receiver-relevant subspace upper bound.
 
-- a robust innovation detector infers observation corruption without corruption labels;
-- state repair protects the sender's persistent vector state;
-- the learned shared projection decides which state directions may propagate;
-- a predictive receiver coasts while silent and is corrected by sparse shared-state events.
+A positive v6 result requires the system to discard shared nuisance without being handed nuisance labels. If it cannot, the correct conclusion is that NewMachine learned *common structure*, not relevance.
 
-Primary comparisons:
+## Later, only if v6 survives
 
-1. learned shared subspace vs sender-only PCA;
-2. shared projection with and without state repair;
-3. learned shared projection vs an oracle public-subspace upper bound;
-4. receiver error vs communication rate, not sender event count alone.
-
-A positive v5 result requires the shared projection to recover the true public subspace on held-out worlds and repair to improve receiver reconstruction without being handed reliability or relevance labels.
-
-## After v5
-
-If v5 survives, move the same estimator into the browser as a slow online learner so the Pages organism visibly develops its publication subspace while it runs. Only after that should we consider grown routing, Oja-style local approximations, oscillatory control, or larger learned models.
+Then ask whether batch/global or paired-view machinery can be replaced by more local mechanisms: rank adaptation, Oja/Hebbian approximations, asynchronous peers, grown routing, or oscillatory control. Those are downstream questions, not assumptions to pile onto the current result.
