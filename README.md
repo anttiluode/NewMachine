@@ -1,188 +1,95 @@
 # NewMachine
 
-> AI inspired by random thoughts on neurons, with the biology stripped down until the computation can fail cleanly.
+> A small stateful AI/control laboratory built by stripping neuron-inspired ideas down until each claim can fail cleanly.
 
-NewMachine asks whether a persistent internal state and its permission to become an output event should be controlled at the same place.
-
-The biological inspiration is the contrast between perisomatic/basket-like inhibition and AIS/chandelier-like inhibition. This repository does **not** claim those cell types literally implement these equations.
-
-The live v4 sender/receiver laboratory is served from the repository root on GitHub Pages.
-
-## Core unit
-
-A unit has persistent state:
+NewMachine separates three things that ordinary toy units often collapse together:
 
 ```text
-x_t = alpha * x_(t-1) + (1-alpha) * u_t - basket_t
+what state should I keep?
+what part of that state is relevant to someone else?
+when should influence actually propagate?
 ```
 
-and a simple dynamic output knee:
+The biological inspiration came from basket/perisomatic versus chandelier/AIS control, but the repository does **not** claim those cell types literally implement these equations.
+
+## Current machine
+
+By v5 the computational object is:
 
 ```text
-slope_t = x_t - x_(t-1)
-theta_t = theta0 + chandelier_t - slope_gain * max(slope_t, 0)
-event_t = 1[x_t > theta_t]
+paired experience
+      -> infer shared directions
+
+observation reliability
+      -> repair/protect persistent sender state
+
+shared publication subspace
+      -> remove local-only directions
+
+sparse event trigger
+      -> transmit only useful corrections
+
+predictive receiver
+      -> coast while silent, correct on events
 ```
 
-So there are two intervention sites:
+That is a larger shift than the original "two inhibitory gates" framing: publication relevance has become a learned geometric object rather than a supplied Boolean switch.
 
-```text
-basket-like      -> change resident state
-chandelier-like  -> change whether resident state is published
-```
+## Progression
 
-## v0 — when do the two gates differ?
+| gate | question | earned result |
+| --- | --- | --- |
+| v0 | Can state-side and output-side control be genuinely different? | Yes, once the controlled variable has memory. |
+| v1 | Is either intervention universally better? | No. Preserving valid state and repairing corrupted state favor different sites. |
+| v2 | Do those sites require two controller output channels? | Not when the required actions are mutually exclusive; one signed command reproduces the oracle switch. |
+| v3 | What if reliability and publication relevance overlap? | Independent objectives can require both interventions simultaneously. |
+| v4 | Does sparse publication help a real downstream consumer? | State repair before communication produces the large gain; separate publication control adds a smaller threshold-dependent effect. |
+| **v5** | Can publication relevance be inferred instead of supplied? | **Yes in the frozen two-view vector world: cross-view structure recovers the shared subspace that sender-only PCA misses.** |
 
-If there is no memory (`alpha=0`) and no slope-sensitive knee, the distinction disappears exactly:
+Full measurements and claim boundaries live in `RESULTS_V0.md` through `RESULTS_V5.md`.
 
-```text
-1[u - q > theta] == 1[u > theta + q]
-```
+## v5 — infer what is shared
 
-v0 verifies this directly. Persistence then breaks the equivalence.
+The sender and a peer each see a six-dimensional mixture of a two-dimensional shared/public latent plus independent local state. Local variance is deliberately larger than public variance, so plain sender PCA is pointed toward the wrong answer.
 
-| gate | result |
-| --- | --- |
-| static identity | exact equivalence |
-| basket recovery scar | **0.093128** |
-| chandelier hidden-state scar | **0.000000** |
-| slow ramp to 0.75 | no event |
-| fast step to 0.75 | event |
+During an unlabeled 420-step calibration prefix, NewMachine estimates sender/peer cross-covariance and uses its leading two eigenvectors as the publication subspace. A robust median/MAD innovation threshold separately supplies the reliability signal for state repair. Neither public/private nor corruption labels are used to choose those controls.
 
-See [`RESULTS_V0.md`](RESULTS_V0.md).
+Across eight frozen worlds, mean alignment with the true public subspace is:
 
-## v1 — oracle context specialists
+| estimator | alignment |
+| --- | ---: |
+| sender-only PCA | 0.233967 |
+| **cross-view shared estimator** | **0.894349** |
 
-v1 gives the machine explicit HIDE and RESET labels. Threshold-side control preserves resident state in HIDE; state-side control repairs resident state in RESET. The oracle hybrid simply selects the appropriate specialist.
+At the default sparse-event threshold `0.10`:
 
-| metric | basket only | chandelier only | oracle hybrid |
-| --- | ---: | ---: | ---: |
-| state RMSE | 0.09446 | 0.10206 | **0.04914** |
-| HIDE recovery error | 0.15603 | **0.0000016** | **0.0000008** |
-| RESET recovery error | **0.10148** | 0.21077 | **0.10148** |
+| policy | receiver RMSE | event fraction |
+| --- | ---: | ---: |
+| raw delta | 0.134430 | 0.208514 |
+| sender PCA delta | 0.136749 | 0.148732 |
+| learned shared delta | 0.087040 | 0.100000 |
+| **learned shared + repair** | **0.031979** | **0.022283** |
+| oracle shared + repair | 0.029785 | 0.024728 |
 
-The old mean-recovery percentages are arithmetic restatements, not separate evidence. The earned statement is only:
+The learned shared projection beats sender PCA in both receiver error and traffic at all seven frozen same-threshold comparisons. Adding repair beats the un-repaired shared projection at all seven as well. The learned repair system is about 7.4% above the oracle receiver RMSE at the default point.
 
-> **Once the gated variable has memory, intervention site changes future computation. Given an oracle context label, the appropriate specialist is context-dependent.**
-
-See [`RESULTS_V1.md`](RESULTS_V1.md).
-
-## v2 — attack the framing
-
-v2 asks whether the controller itself really needs two channels.
-
-A single signed scalar reproduces the v1 oracle hybrid exactly:
-
-```text
-q < 0  -> state-side intervention
-q > 0  -> publication-side intervention
-```
-
-Across held-out seeds: zero state difference, zero threshold difference, zero event mismatches.
-
-Then v2 tests both sites simultaneously during RESET. Extra publication gating can reduce event exposure from about `0.171` toward `0`, but disagreement with the clean reference event stream rises from about `0.365` toward `0.536`; hidden-state recovery remains fixed. So there is no free simultaneous-gating win in that task.
-
-See [`RESULTS_V2.md`](RESULTS_V2.md).
-
-## v3 — independent reliability and publication constraints
-
-v3 changes the geometry of the problem. Publication relevance and input reliability are now **independent factors** that can overlap:
-
-```text
-public + clean      -> no control
-private + clean     -> publication gate
-public + corrupt    -> state repair
-private + corrupt   -> both simultaneously
-```
-
-The private/relevance bit is supplied as context. Corruption is inferred from a simple local prediction residual; a threshold selected only on training seeds reaches held-out corruption F1 `0.812810`.
-
-The key comparison is against a one-signed-scalar reset-priority controller. `factorized` and `reset_priority_signed` make the same state-repair decisions, so their state RMSE and public-event mismatch are exactly equal. But factorized control can still suppress publication when privacy and corruption overlap:
-
-| policy | state RMSE | private event fraction | public event mismatch | overlap event fraction |
-| --- | ---: | ---: | ---: | ---: |
-| reset-priority signed | **0.084754** | 0.074726 | 0.147544 | 0.125606 |
-| **factorized** | **0.084754** | **0.055449** | 0.147544 | **0.033585** |
-
-That is a **25.8%** reduction in private-window events and a **73.3%** reduction in overlap events with no change in state RMSE or public-event fidelity.
-
-This is the first gate where simultaneously available state-side and output-side control does something the exclusive sign router cannot reproduce in one step.
-
-See [`RESULTS_V3.md`](RESULTS_V3.md).
-
-## v4 — give publication a receiver
-
-v4 adds the consumer missing from v0-v3. A predictive receiver advances its own state while silent and is corrected only when a sender event is published.
-
-The world also makes relevance concrete rather than merely scoring an event mask:
-
-```text
-public truth   -> state the receiver should reconstruct
-local truth    -> public truth + valid sender-only state during private windows
-corruption     -> independently contaminates the sender observation
-```
-
-At the frozen default event threshold `0.04`, averaged over eight seeds:
-
-| policy | receiver RMSE | event fraction | recovery RMSE |
-| --- | ---: | ---: | ---: |
-| dense | 0.145569 | 1.000000 | 0.228492 |
-| delta | 0.146279 | 0.150000 | 0.242894 |
-| signed repair-first | 0.038569 | 0.027292 | 0.037005 |
-| factorized repair + publication | **0.038210** | **0.027083** | **0.036623** |
-
-The large effect is **state repair before communication**: receiver RMSE falls by about `73.6%` versus ordinary delta triggering for `signed`, and `73.9%` for `factorized` in this constructed world.
-
-The extra publication site is a smaller result. At the **same seven frozen threshold settings**, `factorized` has lower receiver RMSE while using no more traffic than `signed` at **4 of 7 paired operating points**. Its best same-threshold RMSE improvement is about `0.000588`, while one threshold is about `0.000151` worse. This is not a claim of Pareto dominance over the complete communication/error frontier.
-
-So v4 earns a narrower statement:
-
-> **Persistent-state repair can sit underneath sparse delta communication and substantially improve what a receiver reconstructs when observations are intermittently corrupt. Independent publication control can improve some matched-threshold operating points when valid local-only state should not propagate, but the effect is small and threshold-dependent.**
-
-See [`RESULTS_V4.md`](RESULTS_V4.md).
+See [`RESULTS_V5.md`](RESULTS_V5.md) for the exact protocol and the important limits: shared rank is supplied, calibration is batch/global, a peer view is available, and the corruption task is intentionally easy.
 
 ## Live Pages laboratory
 
-The repository root is now a dependency-free browser lab using the same deterministic v4 equations. It runs continuously through seeded epochs and shows:
+`index.html` is a dependency-free GitHub Pages laboratory. The current browser organism mirrors the deterministic v4 sender/receiver equations and runs continuously through seeded epochs. It exposes policy, seed, event threshold, pause/step/reset controls, live sender/receiver error, message rate, corruption/local-only intervals, and sampled error-versus-traffic curves.
 
-- public truth, resident sender state, and predictive receiver state;
-- corruption windows and valid local-only windows;
-- repair decisions and sparse correction events;
-- live sender/receiver error, message rate, and detector F1;
-- sampled receiver-error versus message-rate curves for all four policies.
+Python receipts remain the scientific authority. The browser simulation has deterministic regression tests and syntax checks in CI.
 
-The page is an inspection instrument. Python receipts remain the scientific authority, and the JavaScript mechanism is regression-tested against a fixed deterministic stream prefix.
+The next browser milestone is to move v5's shared-subspace estimator online so the page visibly **develops its publication geometry while it runs**, instead of only replaying a fixed controller.
 
-## What this currently means
+## What not to claim
 
-The useful abstraction is no longer merely "AIS = attention." It is a stateful sender/receiver machine in which **reliability**, **resident computation**, and **causal publication** are distinct variables:
+NewMachine is still a controlled research toy. It is not evidence that chandelier cells are attention heads, not a new remote-estimation theorem, and not yet a general learned AI architecture. v5 uses paired views, a supplied shared rank, batch eigendecomposition and a deliberately simple corruption regime.
 
-```text
-observation reliability -> repair/protect resident state
-resident state           -> keeps evolving locally
-publication relevance    -> decide whether influence propagates
-receiver                  -> predicts while silent, corrects on events
-```
+The interesting narrow claim is now:
 
-Threshold event triggering and remote estimation already have mature literatures. NewMachine's narrower question is whether state repair and publication control remain separately useful around persistent AI state.
-
-Oscillatory timing, fast controller networks, dendritic modes, Oja specialization, sparse grown routing, vector-valued models, and biological claims remain deliberately outside v4.
-
-## Lineage
-
-```text
-AnttisNeuron
-    dendritic modes / persistent physical state
-
-GrowingAnttisNeuron
-    grow sparse wiring and physical operators
-
-ActiveVectorNN
-    state can remain resident while only changes are communicated
-
-NewMachine
-    separate resident-state repair from publication, then give it a receiver
-```
+> **Persistent state repair and selective publication can remain useful as separate operations, and publication relevance can be represented by an inferred shared subspace rather than an explicit context label.**
 
 ## Run
 
@@ -195,18 +102,33 @@ python -m experiments.run_v1
 python -m experiments.run_v2
 python -m experiments.run_v3
 python -m experiments.run_v4
+python -m experiments.run_v5
 ```
 
 ## Repository map
 
-- `src/new_machine/core.py` — persistent scalar state + two intervention sites + dynamic knee
-- `src/new_machine/task.py` — deterministic v0-v3 streams, residuals, and recovery metrics
-- `src/new_machine/receiver.py` — deterministic v4 sender/receiver world, repair and sparse publication policies
-- `experiments/run_v0.py` through `experiments/run_v4.py` — frozen scientific receipts
-- `index.html` — GitHub Pages live laboratory
-- `web/sim.mjs` — deterministic browser mirror of v4 equations
-- `web/app.mjs` — live animation, metrics and sampled error/traffic curves
-- `web/style.css` — static lab presentation
-- `tests/` — mechanism, receipt, browser-parity and Pages-structure regressions
-- `RESULTS_V0.md` through `RESULTS_V4.md` — measured results and claim boundaries
-- `docs/superpowers/` — frozen designs and implementation plans
+- `src/new_machine/core.py` — original persistent scalar unit and two intervention sites
+- `src/new_machine/task.py` — deterministic v0-v3 task streams and metrics
+- `src/new_machine/receiver.py` — v4 scalar sender/predictive-receiver system
+- `src/new_machine/vector_receiver.py` — v5 two-view vector world, shared-subspace inference and repair
+- `experiments/run_v0.py` … `run_v5.py` — frozen scientific receipts
+- `RESULTS_V0.md` … `RESULTS_V5.md` — measurements and claim boundaries
+- `index.html`, `web/` — live GitHub Pages laboratory
+- `tests/` — mechanism, receipt, browser-parity and page-structure regressions
+- [`ROADMAP.md`](ROADMAP.md) — current spine and next gate only; merged build-plan scaffolding is intentionally pruned
+
+## Lineage
+
+```text
+AnttisNeuron
+    persistent physical/dendritic-state intuition
+
+GrowingAnttisNeuron
+    sparse wiring and physical operators
+
+ActiveVectorNN
+    resident state with sparse communication
+
+NewMachine
+    repair resident state -> infer shared publication geometry -> sparse predictive communication
+```
