@@ -12,6 +12,21 @@ class StepResult:
     event: bool
 
 
+def signed_control(q: float) -> tuple[float, float]:
+    """Route one signed scalar to exactly one intervention site.
+
+    Negative values act on resident state (basket-like); positive values act
+    on publication threshold (chandelier-like). Zero is a no-op.
+    """
+    if not math.isfinite(q):
+        raise ValueError("q must be finite")
+    if q < 0.0:
+        return -float(q), 0.0
+    if q > 0.0:
+        return 0.0, float(q)
+    return 0.0, 0.0
+
+
 class TwoGateUnit:
     """Persistent scalar state with state-side and threshold-side control."""
 
