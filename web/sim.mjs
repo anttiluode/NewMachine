@@ -22,8 +22,8 @@ class Lcg32 {
 }
 
 export function generateWorld(seed, steps) {
-  if (!Number.isInteger(steps) || steps < 32) {
-    throw new Error('steps must be an integer at least 32');
+  if (!Number.isInteger(steps) || steps < 1) {
+    throw new Error('steps must be a positive integer');
   }
 
   const rng = new Lcg32((Number(seed) ^ 0x9e3779b9) >>> 0);
@@ -87,6 +87,7 @@ function recoveryRmse(truth, receiver, corrupt, horizon = 12) {
 
 export function simulate(policy, seed, eventThreshold = 0.08, steps = 1200) {
   if (!POLICIES.has(policy)) throw new Error(`unknown policy: ${policy}`);
+  if (!Number.isInteger(steps) || steps < 32) throw new Error('steps must be an integer at least 32');
   if (!Number.isFinite(eventThreshold) || eventThreshold < 0) {
     throw new Error('eventThreshold must be finite and nonnegative');
   }
