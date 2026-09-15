@@ -22,6 +22,8 @@ jobs:
         run: python -m pytest -q
       - name: Browser simulation tests
         run: node tests/web_sim_test.mjs
+      - name: Browser live vector learner tests
+        run: node tests/web_vector_live_test.mjs
       - name: Browser app syntax
         run: node --check web/app.mjs
       - name: Frozen v0 receipt
@@ -34,3 +36,5 @@ jobs:
         run: python -m experiments.run_v3 > /tmp/newmachine-v3.json
       - name: Frozen v4 receipt
         run: python -m experiments.run_v4 > /tmp/newmachine-v4.json
+      - name: Frozen v5 receipt
+        run: python -m experiments.run_v5 > /tmp/newmachine-v5.json
