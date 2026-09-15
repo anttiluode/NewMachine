@@ -22,6 +22,8 @@ jobs:
         run: python -m pytest -q
       - name: Browser simulation tests
         run: node tests/web_sim_test.mjs
+      - name: Browser app syntax
+        run: node --check web/app.mjs
       - name: Frozen v0 receipt
         run: python -m experiments.run_v0 > /tmp/newmachine-v0.json
       - name: Frozen v1 receipt
