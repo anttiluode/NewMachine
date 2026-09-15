@@ -133,11 +133,11 @@ At the frozen default event threshold `0.04`, averaged over eight seeds:
 
 The large effect is **state repair before communication**: receiver RMSE falls by about `73.6%` versus ordinary delta triggering for `signed`, and `73.9%` for `factorized` in this constructed world.
 
-The extra publication site is a smaller result. `factorized` extends the receiver-error/message-rate frontier over `signed` at **4 of 7** frozen thresholds, but it does not dominate everywhere. Its best RMSE improvement is about `0.000588`, and at one operating point it is about `0.000151` worse.
+The extra publication site is a smaller result. At the **same seven frozen threshold settings**, `factorized` has lower receiver RMSE while using no more traffic than `signed` at **4 of 7 paired operating points**. Its best same-threshold RMSE improvement is about `0.000588`, while one threshold is about `0.000151` worse. This is not a claim of Pareto dominance over the complete communication/error frontier.
 
 So v4 earns a narrower statement:
 
-> **Persistent-state repair can sit underneath sparse delta communication and substantially improve what a receiver reconstructs when observations are intermittently corrupt. Independent publication control can add a small, threshold-dependent frontier extension when valid local-only state should not propagate.**
+> **Persistent-state repair can sit underneath sparse delta communication and substantially improve what a receiver reconstructs when observations are intermittently corrupt. Independent publication control can improve some matched-threshold operating points when valid local-only state should not propagate, but the effect is small and threshold-dependent.**
 
 See [`RESULTS_V4.md`](RESULTS_V4.md).
 
@@ -149,7 +149,7 @@ The repository root is now a dependency-free browser lab using the same determin
 - corruption windows and valid local-only windows;
 - repair decisions and sparse correction events;
 - live sender/receiver error, message rate, and detector F1;
-- the receiver-error versus message-rate frontier for all four policies.
+- sampled receiver-error versus message-rate curves for all four policies.
 
 The page is an inspection instrument. Python receipts remain the scientific authority, and the JavaScript mechanism is regression-tested against a fixed deterministic stream prefix.
 
@@ -205,7 +205,7 @@ python -m experiments.run_v4
 - `experiments/run_v0.py` through `experiments/run_v4.py` — frozen scientific receipts
 - `index.html` — GitHub Pages live laboratory
 - `web/sim.mjs` — deterministic browser mirror of v4 equations
-- `web/app.mjs` — live animation, metrics and frontier rendering
+- `web/app.mjs` — live animation, metrics and sampled error/traffic curves
 - `web/style.css` — static lab presentation
 - `tests/` — mechanism, receipt, browser-parity and Pages-structure regressions
 - `RESULTS_V0.md` through `RESULTS_V4.md` — measured results and claim boundaries
