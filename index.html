@@ -4,55 +4,55 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>NewMachine — Live Receiver Lab</title>
-  <meta name="description" content="A live NewMachine sender/receiver experiment: persistent state, local repair, sparse publication, predictive receiving.">
+  <title>NewMachine — Live Development Lab</title>
+  <meta name="description" content="A live browser-native NewMachine that learns a shared publication subspace while its persistent sender and predictive receiver keep running.">
   <link rel="stylesheet" href="web/style.css">
 </head>
 <body>
   <main class="shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">NEWMACHINE · V4 LIVE LAB</p>
-        <h1>Keep a state alive.<br><span>Tell the receiver what matters.</span></h1>
-        <p class="lede">A persistent sender tracks a changing world. A predictive receiver coasts between sparse correction events. Corruption can trigger state repair; local-only state can keep evolving without being published.</p>
+        <p class="eyebrow">NEWMACHINE · V5 LIVE DEVELOPMENT LAB</p>
+        <h1>Watch a publication geometry form.<br><span>Nothing tells it what is public.</span></h1>
+        <p class="lede">Two noisy views contain the same hidden public process plus stronger local-only activity. The machine slowly learns the shared subspace online, protects persistent sender state from large unreliable innovations, and sends sparse corrections to a predictive receiver.</p>
       </div>
-      <div class="hero-diagram" aria-label="sender receiver architecture">
-        <div class="node"><b>WORLD</b><small>public + local state</small></div>
+      <div class="hero-diagram" aria-label="online shared-subspace sender receiver architecture">
+        <div class="node"><b>PAIRED VIEWS</b><small>shared signal + independent local state</small></div>
         <div class="arrow">→</div>
-        <div class="node node-hot"><b>SENDER</b><small>persistent state</small></div>
-        <div class="gate-stack"><span>repair</span><span>publish?</span></div>
+        <div class="node node-hot"><b>SHARED SUBSPACE</b><small>learns online from cross-view structure</small></div>
+        <div class="gate-stack"><span>repair state</span><span>publish projection</span></div>
         <div class="arrow">→</div>
-        <div class="node node-cool"><b>RECEIVER</b><small>predict + correct</small></div>
+        <div class="node node-cool"><b>RECEIVER</b><small>predict while silent, correct on events</small></div>
       </div>
     </header>
 
     <section class="control-bar" aria-label="simulation controls">
-      <label>Policy
+      <label>Mode
         <select id="policy">
-          <option value="dense">Dense — always publish</option>
-          <option value="delta">Delta — innovation only</option>
-          <option value="signed">Signed — one action at a time</option>
-          <option value="factorized" selected>Factorized — repair + publish separately</option>
+          <option value="learned-repair" selected>Online shared + repair</option>
+          <option value="learned">Online shared, no repair</option>
+          <option value="raw">Raw delta control</option>
         </select>
       </label>
       <label>Seed
         <input id="seed" type="number" value="11" min="0" step="1">
       </label>
-      <label class="threshold-label">Event threshold <output id="threshold-value">0.04</output>
-        <input id="threshold" type="range" min="0" max="0.18" step="0.01" value="0.04">
+      <label class="threshold-label">Event threshold <output id="threshold-value">0.10</output>
+        <input id="threshold" type="range" min="0.02" max="0.25" step="0.01" value="0.10">
       </label>
       <div class="button-row">
         <button id="run-toggle" type="button">Pause</button>
         <button id="step-once" type="button">Step</button>
-        <button id="reset-world" type="button">Reset</button>
+        <button id="reset-world" type="button">Rebirth</button>
       </div>
     </section>
 
     <section class="metrics" aria-label="live metrics">
-      <article class="metric"><span>Receiver RMSE</span><strong id="receiver-rmse">—</strong><small>public truth reconstruction</small></article>
-      <article class="metric"><span>Message rate</span><strong id="message-rate">—</strong><small>published steps / elapsed steps</small></article>
-      <article class="metric"><span>Sender RMSE</span><strong id="sender-rmse">—</strong><small>local state reconstruction</small></article>
-      <article class="metric"><span>Detector F1</span><strong id="detector-f1">—</strong><small>corruption detector so far</small></article>
+      <article class="metric"><span>Shared alignment</span><strong id="shared-alignment">—</strong><small>evaluator-only score, 1 = exact</small></article>
+      <article class="metric"><span>Receiver RMSE</span><strong id="receiver-rmse">—</strong><small>public-state reconstruction</small></article>
+      <article class="metric"><span>Message rate</span><strong id="message-rate">—</strong><small>published corrections / age</small></article>
+      <article class="metric"><span>Sender RMSE</span><strong id="sender-rmse">—</strong><small>resident local-state error</small></article>
+      <article class="metric"><span>Detector F1</span><strong id="detector-f1">—</strong><small>scored after the fact</small></article>
     </section>
 
     <section class="lab-grid">
@@ -60,20 +60,19 @@
         <div class="panel-head">
           <div>
             <p class="eyebrow">LIVE STATE</p>
-            <h2>The machine while it is running</h2>
+            <h2>The machine while its representation is forming</h2>
           </div>
           <div id="world-status" class="status-pill" aria-live="polite">initializing</div>
         </div>
-        <canvas id="trace-canvas" width="1100" height="470" aria-label="Live traces of public truth, local sender state and receiver estimate"></canvas>
+        <canvas id="trace-canvas" width="1100" height="470" aria-label="Live public, publishable sender and receiver coordinates"></canvas>
         <div class="legend" aria-label="trace legend">
-          <span><i class="swatch truth"></i>public truth</span>
-          <span><i class="swatch sender"></i>sender state</span>
+          <span><i class="swatch truth"></i>public truth coordinate</span>
+          <span><i class="swatch sender"></i>publishable sender coordinate</span>
           <span><i class="swatch receiver"></i>receiver estimate</span>
-          <span><i class="swatch private"></i>local-only window</span>
-          <span><i class="swatch corrupt"></i>corrupt observation</span>
+          <span><i class="swatch corrupt"></i>corrupt sender observation</span>
           <span><i class="swatch event"></i>message</span>
         </div>
-        <p class="caption">During a local-only window the sender is allowed to contain valid state the receiver should not track. During corruption, repair-first policies protect the sender before publication is considered.</p>
+        <p class="caption">The trace is drawn on one true public axis only so you can see the six-dimensional machine. That axis is evaluator-only: the learner never receives it. Its publication geometry comes only from the paired sender/peer observations.</p>
       </article>
 
       <aside class="panel state-panel">
@@ -81,47 +80,45 @@
         <h2>What is happening?</h2>
         <dl class="state-list">
           <div><dt>Observation</dt><dd id="status-observation">—</dd></div>
-          <div><dt>Relevance</dt><dd id="status-relevance">—</dd></div>
+          <div><dt>Shared subspace</dt><dd id="status-relevance">—</dd></div>
           <div><dt>State action</dt><dd id="status-repair">—</dd></div>
           <div><dt>Publication</dt><dd id="status-publication">—</dd></div>
-          <div><dt>Epoch / step</dt><dd id="status-clock">—</dd></div>
+          <div><dt>Age</dt><dd id="status-clock">—</dd></div>
         </dl>
         <div class="pulse-box" aria-hidden="true">
           <div id="sender-orb" class="orb sender-orb">S</div>
           <div id="message-pulse" class="message-line"><span>event</span></div>
           <div id="receiver-orb" class="orb receiver-orb">R</div>
         </div>
-        <p class="aside-note"><b>State is not traffic.</b> The sender can keep changing while the receiver hears nothing. A message is a correction event, not the whole computation.</p>
+        <p class="aside-note"><b>The representation is changing too.</b> The sender/receiver loop keeps operating while the two-dimensional publication subspace is continuously nudged toward structure shared across the two views.</p>
       </aside>
     </section>
 
     <section class="panel frontier-panel">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">ERROR × TRAFFIC</p>
-          <h2>Does silence actually help the receiver?</h2>
+          <p class="eyebrow">DEVELOPMENT</p>
+          <h2>A shared subspace emerging online</h2>
         </div>
-        <p class="frontier-note">lower-left is better</p>
+        <p class="frontier-note">the learner never sees the score</p>
       </div>
-      <canvas id="frontier-canvas" width="1100" height="420" aria-label="Receiver error versus message rate frontier for all four policies"></canvas>
+      <canvas id="frontier-canvas" width="1100" height="420" aria-label="Development of shared-subspace alignment, traffic and current publication projector"></canvas>
       <div class="legend policy-legend">
-        <span><i class="swatch dense"></i>dense</span>
-        <span><i class="swatch delta"></i>delta</span>
-        <span><i class="swatch signed"></i>signed</span>
-        <span><i class="swatch factorized"></i>factorized</span>
+        <span><i class="swatch alignment"></i>shared-subspace alignment</span>
+        <span><i class="swatch traffic"></i>cumulative message rate</span>
       </div>
-      <p class="caption">The point of v4 is not to reward silence. A policy only earns a place on this plot if the downstream receiver stays accurate. The Python receipt is the scientific authority; this browser lab mirrors the same equations for inspection.</p>
+      <p class="caption">Alignment compares the learned projector with the hidden true public projector for inspection only. The 6 × 6 heatmap is the publication projector the machine is actually using. In learned modes it changes every step; in the raw control it stays frozen.</p>
     </section>
 
     <section class="explain-grid">
-      <article class="explain"><b>1 · resident state</b><p>The sender does not reconstruct itself from scratch each frame. Its state persists and evolves.</p></article>
-      <article class="explain"><b>2 · repair</b><p>A large local residual can stop a corrupted observation from poisoning future sender state.</p></article>
-      <article class="explain"><b>3 · publication</b><p>Separately, a correct local state can be kept private when it is irrelevant to this receiver.</p></article>
-      <article class="explain"><b>4 · prediction</b><p>When no event arrives, the receiver does not freeze; it advances its own simple predictive state.</p></article>
+      <article class="explain"><b>1 · paired experience</b><p>Both views contain the same weak public process but different, stronger local variation. No private/public label is supplied.</p></article>
+      <article class="explain"><b>2 · shared geometry</b><p>A streaming cross-view update rotates two orthonormal publication directions toward whatever repeatedly appears in both views.</p></article>
+      <article class="explain"><b>3 · repair</b><p>A robust innovation scale is estimated online. Large sender residuals can be refused before they poison persistent state.</p></article>
+      <article class="explain"><b>4 · sparse influence</b><p>The receiver predicts during silence and only receives a correction when the learned shared projection differs enough.</p></article>
     </section>
 
     <footer>
-      <p><b>NewMachine v4</b> · deterministic browser mirror of the repository experiment · no backend · no learned controller yet.</p>
+      <p><b>NewMachine v5 live extension</b> · browser-native streaming learner · no backend · no labels for relevance · Python v5 remains the frozen scientific receipt.</p>
     </footer>
   </main>
   <script type="module" src="web/app.mjs"></script>
