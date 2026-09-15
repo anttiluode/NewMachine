@@ -51,13 +51,7 @@ See [`RESULTS_V0.md`](RESULTS_V0.md).
 
 ## v1 — oracle context specialists
 
-v1 gives the machine two explicit contexts.
-
-**HIDE:** the current internal representation is correct, but output should be muted temporarily.
-
-**RESET:** the input is contaminated, so the internal state itself should be corrected rather than merely hidden.
-
-The result is deliberately interpreted narrowly. Threshold-side control preserves resident state in HIDE; state-side control repairs resident state in RESET. The oracle hybrid is handed the context label and simply selects the appropriate specialist.
+v1 gives the machine explicit HIDE and RESET labels. Threshold-side control preserves resident state in HIDE; state-side control repairs resident state in RESET. The oracle hybrid simply selects the appropriate specialist.
 
 | metric | basket only | chandelier only | oracle hybrid |
 | --- | ---: | ---: | ---: |
@@ -65,7 +59,7 @@ The result is deliberately interpreted narrowly. Threshold-side control preserve
 | HIDE recovery error | 0.15603 | **0.0000016** | **0.0000008** |
 | RESET recovery error | **0.10148** | 0.21077 | **0.10148** |
 
-The earlier mean recovery summary and percentage reductions are arithmetic restatements of these context cells, not independent evidence. v1 therefore earns only:
+The old mean-recovery percentages are arithmetic restatements, not separate evidence. The earned statement is only:
 
 > **Once the gated variable has memory, intervention site changes future computation. Given an oracle context label, the appropriate specialist is context-dependent.**
 
@@ -73,33 +67,59 @@ See [`RESULTS_V1.md`](RESULTS_V1.md).
 
 ## v2 — attack the framing
 
-Before adding a learned controller, v2 adds the cheapest controls that could collapse the story.
+v2 asks whether the controller itself really needs two channels.
 
-### One signed scalar
-
-A single command `q_t` can route by sign:
+A single signed scalar reproduces the v1 oracle hybrid exactly:
 
 ```text
 q < 0  -> state-side intervention
 q > 0  -> publication-side intervention
-q = 0  -> no-op
 ```
 
-The frozen control asks whether this one-dimensional controller signal reproduces the v1 oracle hybrid exactly. If it does, two independent controller output channels are unnecessary; the essential object is still access to two intervention sites.
+Across held-out seeds: zero state difference, zero threshold difference, zero event mismatches.
 
-### Both sites at RESET
+Then v2 tests both sites simultaneously during RESET. Extra publication gating can reduce event exposure from about `0.171` toward `0`, but disagreement with the clean reference event stream rises from about `0.365` toward `0.536`; hidden-state recovery remains fixed. So there is no free simultaneous-gating win in that task.
 
-The publication gate cannot improve hidden-state recovery because it does not alter hidden state. Its only possible extra value is to suppress publications while state-side repair is settling.
+See [`RESULTS_V2.md`](RESULTS_V2.md).
 
-v2 therefore keeps basket repair identical and sweeps an additional publication hold through RESET plus a fixed post-RESET recovery window. The strict comparison is against the clean reference event stream, so simply muting everything cannot count as a free win.
+## v3 — independent reliability and publication constraints
 
-See [`RESULTS_V2.md`](RESULTS_V2.md) once the frozen receipt is run.
+v3 changes the geometry of the problem. Publication relevance and input reliability are now **independent factors** that can overlap:
+
+```text
+public + clean      -> no control
+private + clean     -> publication gate
+public + corrupt    -> state repair
+private + corrupt   -> both simultaneously
+```
+
+The private/relevance bit is supplied as context. Corruption is inferred from a simple local prediction residual; a threshold selected only on training seeds reaches held-out corruption F1 `0.812810`.
+
+The key comparison is against a one-signed-scalar reset-priority controller. `factorized` and `reset_priority_signed` make the same state-repair decisions, so their state RMSE and public-event mismatch are exactly equal. But factorized control can still suppress publication when privacy and corruption overlap:
+
+| policy | state RMSE | private event fraction | public event mismatch | overlap event fraction |
+| --- | ---: | ---: | ---: | ---: |
+| reset-priority signed | **0.084754** | 0.074726 | 0.147544 | 0.125606 |
+| **factorized** | **0.084754** | **0.055449** | 0.147544 | **0.033585** |
+
+That is a **25.8%** reduction in private-window events and a **73.3%** reduction in overlap events with no change in state RMSE or public-event fidelity.
+
+This is the first gate where simultaneously available state-side and output-side control does something the exclusive sign router cannot reproduce in one step.
+
+See [`RESULTS_V3.md`](RESULTS_V3.md).
 
 ## What this currently means
 
-The useful abstraction is not "AIS = attention." It is a stateful machine in which **changing computation** and **changing publication** are distinct interventions once memory exists.
+The useful abstraction is not "AIS = attention." It is a stateful machine where **reliability** and **publication relevance** can be separate control variables:
 
-Whether those interventions require two independently controlled channels, whether they have a simultaneous-use advantage, and whether context can be inferred rather than handed in are separate questions. v2 handles the first two before any learned controller is introduced.
+```text
+reliability signal  -> alter resident state
+context/relevance   -> alter publication
+```
+
+When those requirements are independent, both interventions may be needed at once.
+
+This is still a toy, and threshold event triggering / remote estimation already have a mature control-theory literature. NewMachine's narrower question is whether a persistent AI unit benefits from separating state repair from publication control.
 
 Oscillatory timing, fast controller networks, dendritic modes, Oja specialization, sparse grown routing, and biological claims remain deliberately outside the current machine.
 
@@ -127,15 +147,17 @@ pytest -q
 python -m experiments.run_v0
 python -m experiments.run_v1
 python -m experiments.run_v2
+python -m experiments.run_v3
 ```
 
 ## Repository map
 
 - `src/new_machine/core.py` — persistent state + two intervention sites + signed control router + dynamic knee
-- `src/new_machine/task.py` — deterministic streams, recovery metrics, and recovery-hold masks
+- `src/new_machine/task.py` — deterministic streams, residuals, and recovery metrics
 - `experiments/run_v0.py` — equivalence/divergence receipt
 - `experiments/run_v1.py` — oracle context-specialist receipt
-- `experiments/run_v2.py` — signed-scalar and simultaneous-control adversarial receipt
+- `experiments/run_v2.py` — adversarial signed-scalar/simultaneous-control receipt
+- `experiments/run_v3.py` — factorized context/reliability receipt
 - `tests/` — mechanism and receipt regressions
-- `RESULTS_V0.md`, `RESULTS_V1.md`, `RESULTS_V2.md` — measured results and claim boundaries
+- `RESULTS_V0.md` through `RESULTS_V3.md` — measured results and claim boundaries
 - `docs/superpowers/` — frozen designs and implementation plans
