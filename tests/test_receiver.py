@@ -10,8 +10,31 @@ def test_simulation_is_deterministic_for_same_seed():
     second = simulate_policy(seed=7, policy="factorized", event_threshold=0.08, steps=600)
 
     assert first["metrics"] == second["metrics"]
-    for key in ("truth", "observed", "sender", "receiver", "private", "corrupt", "events"):
+    for key in (
+        "truth",
+        "local_truth",
+        "observed",
+        "sender",
+        "receiver",
+        "private",
+        "corrupt",
+        "events",
+    ):
         assert np.array_equal(first["trace"][key], second["trace"][key])
+
+
+def test_private_windows_can_contain_valid_local_only_state():
+    result = simulate_policy(seed=13, policy="factorized", event_threshold=0.04, steps=700)
+    trace = result["trace"]
+    private_clean = trace["private"] & ~trace["corrupt"]
+
+    assert np.any(private_clean)
+    assert np.any(np.abs(trace["local_truth"][private_clean] - trace["truth"][private_clean]) > 0.05)
+
+    sender_rmse = float(np.sqrt(np.mean((trace["sender"] - trace["local_truth"]) ** 2)))
+    receiver_rmse = float(np.sqrt(np.mean((trace["receiver"] - trace["truth"]) ** 2)))
+    assert np.isclose(result["metrics"]["sender_rmse"], sender_rmse)
+    assert np.isclose(result["metrics"]["receiver_rmse"], receiver_rmse)
 
 
 def test_factorized_policy_can_repair_and_suppress_on_same_step():
