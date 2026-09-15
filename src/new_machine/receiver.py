@@ -11,6 +11,7 @@ BASELINE = 0.55
 SENDER_ALPHA = 0.90
 RECEIVER_ALPHA = 0.995
 DETECTOR_THRESHOLD = 0.20
+LOCAL_ONLY_OFFSET = 0.10
 
 
 @dataclass
@@ -28,12 +29,16 @@ class Lcg32:
         return 2.0 * self.uniform() - 1.0
 
 
-def _world(seed: int, steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _world(
+    seed: int,
+    steps: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     if steps < 32:
         raise ValueError("steps must be at least 32")
 
     rng = Lcg32(seed ^ 0x9E3779B9)
     truth = np.empty(steps, dtype=float)
+    local_truth = np.empty(steps, dtype=float)
     observed = np.empty(steps, dtype=float)
     private = np.zeros(steps, dtype=bool)
     corrupt = np.zeros(steps, dtype=bool)
@@ -45,9 +50,13 @@ def _world(seed: int, steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, n
 
         private[t] = ((t + (seed * 7) % 83) % 83) < 18
         corrupt[t] = ((t + (seed * 11) % 97) % 97) < 16
-        observed[t] = truth[t] + 0.02 * rng.signed() + (0.45 if corrupt[t] else 0.0)
 
-    return truth, observed, private, corrupt
+        # A private interval may contain legitimate local computation that the
+        # downstream receiver should not track. This is relevance, not noise.
+        local_truth[t] = truth[t] + (LOCAL_ONLY_OFFSET if private[t] else 0.0)
+        observed[t] = local_truth[t] + 0.02 * rng.signed() + (0.45 if corrupt[t] else 0.0)
+
+    return truth, local_truth, observed, private, corrupt
 
 
 def _recovery_rmse(truth: np.ndarray, receiver: np.ndarray, corrupt: np.ndarray, horizon: int = 12) -> float:
@@ -70,6 +79,10 @@ def simulate_policy(
 ) -> dict[str, object]:
     """Run one sender/receiver policy on a deterministic stream.
 
+    `truth` is the receiver-relevant public state. `local_truth` may contain a
+    valid local-only excursion during private windows. The sender is scored
+    against local truth; the receiver is scored against public truth.
+
     Policies:
       dense      - publish every step, no repair.
       delta      - publish innovations above threshold, no repair.
@@ -82,7 +95,7 @@ def simulate_policy(
     if not np.isfinite(event_threshold) or event_threshold < 0.0:
         raise ValueError("event_threshold must be finite and nonnegative")
 
-    truth, observed, private, corrupt = _world(int(seed), int(steps))
+    truth, local_truth, observed, private, corrupt = _world(int(seed), int(steps))
     sender = np.empty(steps, dtype=float)
     receiver = np.empty(steps, dtype=float)
     detected = np.zeros(steps, dtype=bool)
@@ -124,7 +137,7 @@ def simulate_policy(
 
     overlap = private & detected
     metrics = {
-        "sender_rmse": float(np.sqrt(np.mean((sender - truth) ** 2))),
+        "sender_rmse": float(np.sqrt(np.mean((sender - local_truth) ** 2))),
         "receiver_rmse": float(np.sqrt(np.mean((receiver - truth) ** 2))),
         "event_fraction": float(np.mean(events)),
         "private_event_fraction": float(np.mean(events[private])) if np.any(private) else 0.0,
@@ -140,6 +153,7 @@ def simulate_policy(
         "metrics": metrics,
         "trace": {
             "truth": truth,
+            "local_truth": local_truth,
             "observed": observed,
             "sender": sender,
             "receiver": receiver,
