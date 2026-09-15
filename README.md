@@ -6,6 +6,8 @@ NewMachine asks whether a persistent internal state and its permission to become
 
 The biological inspiration is the contrast between perisomatic/basket-like inhibition and AIS/chandelier-like inhibition. This repository does **not** claim those cell types literally implement these equations.
 
+The live v4 sender/receiver laboratory is served from the repository root on GitHub Pages.
+
 ## Core unit
 
 A unit has persistent state:
@@ -108,20 +110,63 @@ This is the first gate where simultaneously available state-side and output-side
 
 See [`RESULTS_V3.md`](RESULTS_V3.md).
 
-## What this currently means
+## v4 — give publication a receiver
 
-The useful abstraction is not "AIS = attention." It is a stateful machine where **reliability** and **publication relevance** can be separate control variables:
+v4 adds the consumer missing from v0-v3. A predictive receiver advances its own state while silent and is corrected only when a sender event is published.
+
+The world also makes relevance concrete rather than merely scoring an event mask:
 
 ```text
-reliability signal  -> alter resident state
-context/relevance   -> alter publication
+public truth   -> state the receiver should reconstruct
+local truth    -> public truth + valid sender-only state during private windows
+corruption     -> independently contaminates the sender observation
 ```
 
-When those requirements are independent, both interventions may be needed at once.
+At the frozen default event threshold `0.04`, averaged over eight seeds:
 
-This is still a toy, and threshold event triggering / remote estimation already have a mature control-theory literature. NewMachine's narrower question is whether a persistent AI unit benefits from separating state repair from publication control.
+| policy | receiver RMSE | event fraction | recovery RMSE |
+| --- | ---: | ---: | ---: |
+| dense | 0.145569 | 1.000000 | 0.228492 |
+| delta | 0.146279 | 0.150000 | 0.242894 |
+| signed repair-first | 0.038569 | 0.027292 | 0.037005 |
+| factorized repair + publication | **0.038210** | **0.027083** | **0.036623** |
 
-Oscillatory timing, fast controller networks, dendritic modes, Oja specialization, sparse grown routing, and biological claims remain deliberately outside the current machine.
+The large effect is **state repair before communication**: receiver RMSE falls by about `73.6%` versus ordinary delta triggering for `signed`, and `73.9%` for `factorized` in this constructed world.
+
+The extra publication site is a smaller result. At the **same seven frozen threshold settings**, `factorized` has lower receiver RMSE while using no more traffic than `signed` at **4 of 7 paired operating points**. Its best same-threshold RMSE improvement is about `0.000588`, while one threshold is about `0.000151` worse. This is not a claim of Pareto dominance over the complete communication/error frontier.
+
+So v4 earns a narrower statement:
+
+> **Persistent-state repair can sit underneath sparse delta communication and substantially improve what a receiver reconstructs when observations are intermittently corrupt. Independent publication control can improve some matched-threshold operating points when valid local-only state should not propagate, but the effect is small and threshold-dependent.**
+
+See [`RESULTS_V4.md`](RESULTS_V4.md).
+
+## Live Pages laboratory
+
+The repository root is now a dependency-free browser lab using the same deterministic v4 equations. It runs continuously through seeded epochs and shows:
+
+- public truth, resident sender state, and predictive receiver state;
+- corruption windows and valid local-only windows;
+- repair decisions and sparse correction events;
+- live sender/receiver error, message rate, and detector F1;
+- sampled receiver-error versus message-rate curves for all four policies.
+
+The page is an inspection instrument. Python receipts remain the scientific authority, and the JavaScript mechanism is regression-tested against a fixed deterministic stream prefix.
+
+## What this currently means
+
+The useful abstraction is no longer merely "AIS = attention." It is a stateful sender/receiver machine in which **reliability**, **resident computation**, and **causal publication** are distinct variables:
+
+```text
+observation reliability -> repair/protect resident state
+resident state           -> keeps evolving locally
+publication relevance    -> decide whether influence propagates
+receiver                  -> predicts while silent, corrects on events
+```
+
+Threshold event triggering and remote estimation already have mature literatures. NewMachine's narrower question is whether state repair and publication control remain separately useful around persistent AI state.
+
+Oscillatory timing, fast controller networks, dendritic modes, Oja specialization, sparse grown routing, vector-valued models, and biological claims remain deliberately outside v4.
 
 ## Lineage
 
@@ -136,7 +181,7 @@ ActiveVectorNN
     state can remain resident while only changes are communicated
 
 NewMachine
-    separate control of resident state from control of publication
+    separate resident-state repair from publication, then give it a receiver
 ```
 
 ## Run
@@ -144,20 +189,24 @@ NewMachine
 ```bash
 python -m pip install -e ".[test]"
 pytest -q
+node tests/web_sim_test.mjs
 python -m experiments.run_v0
 python -m experiments.run_v1
 python -m experiments.run_v2
 python -m experiments.run_v3
+python -m experiments.run_v4
 ```
 
 ## Repository map
 
-- `src/new_machine/core.py` — persistent state + two intervention sites + signed control router + dynamic knee
-- `src/new_machine/task.py` — deterministic streams, residuals, and recovery metrics
-- `experiments/run_v0.py` — equivalence/divergence receipt
-- `experiments/run_v1.py` — oracle context-specialist receipt
-- `experiments/run_v2.py` — adversarial signed-scalar/simultaneous-control receipt
-- `experiments/run_v3.py` — factorized context/reliability receipt
-- `tests/` — mechanism and receipt regressions
-- `RESULTS_V0.md` through `RESULTS_V3.md` — measured results and claim boundaries
+- `src/new_machine/core.py` — persistent scalar state + two intervention sites + dynamic knee
+- `src/new_machine/task.py` — deterministic v0-v3 streams, residuals, and recovery metrics
+- `src/new_machine/receiver.py` — deterministic v4 sender/receiver world, repair and sparse publication policies
+- `experiments/run_v0.py` through `experiments/run_v4.py` — frozen scientific receipts
+- `index.html` — GitHub Pages live laboratory
+- `web/sim.mjs` — deterministic browser mirror of v4 equations
+- `web/app.mjs` — live animation, metrics and sampled error/traffic curves
+- `web/style.css` — static lab presentation
+- `tests/` — mechanism, receipt, browser-parity and Pages-structure regressions
+- `RESULTS_V0.md` through `RESULTS_V4.md` — measured results and claim boundaries
 - `docs/superpowers/` — frozen designs and implementation plans
