@@ -16,12 +16,14 @@ def test_v4_factorized_and_signed_have_identical_sender_dynamics():
     assert comparison["sender_rmse_max_abs_difference"] <= 1e-12
 
 
-def test_v4_receipt_records_frontier_extension_without_requiring_global_win():
+def test_v4_receipt_labels_same_threshold_comparison_as_pairwise_not_pareto():
     result = run_v4()
     comparison = result["factorized_vs_signed"]
-    assert 0 <= comparison["pareto_better_points"] <= len(THRESHOLDS)
-    assert isinstance(comparison["frontier_extension_found"], bool)
-    assert comparison["frontier_extension_found"] == (comparison["pareto_better_points"] > 0)
+    assert 0 <= comparison["pairwise_better_points"] <= len(THRESHOLDS)
+    assert isinstance(comparison["pairwise_improvement_found"], bool)
+    assert comparison["pairwise_improvement_found"] == (comparison["pairwise_better_points"] > 0)
+    assert "pareto_better_points" not in comparison
+    assert "frontier_extension_found" not in comparison
 
 
 def test_v4_default_operating_point_has_real_receiver_and_message_metrics():
